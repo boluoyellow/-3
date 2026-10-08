@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#194b42">
+  <meta name="description" content="拾光校园寻物：发布寻物与招领信息，搜索线索，联系发布者，更新找回状态。">
+  <title>拾光 · 校园寻物</title>
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="js/store.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#home" aria-label="拾光首页"><img src="assets/mark.svg" width="38" height="38" alt=""><span>拾光<small>校园寻物</small></span></a>
+      <nav aria-label="主要导航"><a href="#home" data-nav="home">寻物广场</a><a href="#mine" data-nav="mine">我的发布</a></nav>
+      <div class="header-actions"><button id="nickname-button" class="avatar-button" type="button">设置昵称</button><a class="button primary compact" href="#publish">＋ 发布信息</a></div>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <footer class="site-footer"><span>拾光 SHIGUANG · 拾起善意，让遗失有回音</span><span>课程演示版 · 数据仅保存在当前浏览器</span></footer>
+  <dialog id="nickname-dialog" aria-labelledby="nickname-title">
+    <form id="nickname-form" class="dialog-body">
+      <button type="button" class="dialog-close" data-close="nickname-dialog" aria-label="关闭">×</button>
+      <span class="eyebrow">A LITTLE INTRODUCTION</span><h2 id="nickname-title">设置昵称</h2>
+      <p class="muted">给自己取个称呼，方便其他同学联系你。无需账号和密码。</p>
+      <label class="field">展示昵称<input id="nickname-input" name="nickname" required maxlength="20" autocomplete="nickname" placeholder="例如：小林同学"></label>
+      <p id="nickname-error" class="form-error" role="alert"></p>
+      <button class="button primary full" type="submit">保存昵称</button>
+      <p class="fine-print">昵称只用于展示，不是校园实名认证。</p>
+    </form>
+  </dialog>
+  <dialog id="contact-dialog" aria-labelledby="contact-title">
+    <div class="dialog-body"><button type="button" class="dialog-close" data-close="contact-dialog" aria-label="关闭">×</button>
+      <span class="eyebrow">MAKE A CONNECTION</span><h2 id="contact-title">联系发布者</h2><p id="contact-owner" class="muted"></p>
+      <label class="field">联系方式<input id="contact-value" readonly aria-label="发布者联系方式"></label>
+      <button id="copy-contact" class="button primary full" type="button">复制联系方式</button>
+      <p class="safety-note">请先核对物品特征，在校园公共场所交接，不要提前转账。</p>
+    </div>
+  </dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <div class="dialog-body"><h2 id="confirm-title"></h2><p id="confirm-description" class="muted"></p>
+      <div class="dialog-actions"><button type="button" class="button secondary" data-close="confirm-dialog">取消</button><button id="confirm-action" type="button" class="button primary">确认</button></div>
+    </div>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

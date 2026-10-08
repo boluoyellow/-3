@@ -1,0 +1,46 @@
+'use strict'
+const { test } = require('node:test')
+const assert = require('node:assert/strict')
+const api = require('../js/store')
+function setup() {
+  const data = new Map()
+  let sequence = 0
+  const storage = { getItem: (key) => data.has(key) ? data.get(key) : null, setItem: (key, value) => data.set(key, value), removeItem: (key) => data.delete(key) }
+  const options = { now: () => new Date(2026, 9, 8, 12), id: () => `test-${++sequence}` }
+  const store = api.createStore(storage, options)
+  const payload = { type: 'lost', title: '白色耳机', category: '数码', date: '2026-10-08', location: '图书馆', description: '白色充电盒带星星贴纸', contact: '微信：test', image: '' }
+  store.setNickname('小林')
+  return { store, storage, data, payload, options }
+}
+test('首次打开提供六条明确的演示信息', () => { const { store } = setup(); assert.equal(store.list().length, 6); assert.ok(store.list().every((item) => item.demo && !item.mine)) })
+test('新发布默认进行中而非已完成', () => { const { store, payload } = setup(); const item = store.add(payload); assert.equal(item.status, 'open'); assert.equal(api.statusLabel(item), '寻物中'); assert.equal(item.mine, true) })
+test('招领新发布与完成状态措辞正确', () => { const { store, payload } = setup(); const item = store.add({ ...payload, type: 'found' }); assert.equal(api.statusLabel(item), '招领中'); assert.equal(api.statusLabel(store.setStatus(item.id, 'closed')), '已归还') })
+test('刷新重建 store 后仍保留信息和图片', () => { const { store, storage, payload, options } = setup(); const image = 'data:image/png;base64,aGVsbG8='; const item = store.add({ ...payload, image }); assert.equal(api.createStore(storage, options).get(item.id).image, image) })
+test('昵称修改不改变已有记录的管理归属', () => { const { store, payload } = setup(); const item = store.add(payload); store.setNickname('新昵称'); assert.equal(store.get(item.id).mine, true); assert.equal(store.get(item.id).owner, '小林'); assert.equal(store.add(payload).owner, '新昵称') })
+test('尚未设置昵称不能发布', () => { const { store, storage, payload } = setup(); const state = JSON.parse(storage.getItem(api.KEY)); state.nickname = ''; storage.setItem(api.KEY, JSON.stringify(state)); assert.throws(() => store.add(payload), /设置昵称/) })
+test('不能修改示例或其他用户记录', () => { const { store } = setup(); assert.throws(() => store.setStatus('demo-1', 'closed'), /自己发布/); assert.throws(() => store.remove('demo-1'), /自己发布/) })
+test('已找回可重新开启', () => { const { store, payload } = setup(); const item = store.add(payload); assert.equal(api.statusLabel(store.setStatus(item.id, 'closed')), '已找回'); assert.equal(store.setStatus(item.id, 'open').status, 'open') })
+test('删除只影响指定的自己发布记录', () => { const { store, payload } = setup(); const a = store.add(payload); const b = store.add(payload); store.remove(a.id); assert.equal(store.get(a.id), null); assert.ok(store.get(b.id)); assert.equal(store.list().length, 7) })
+test('缺失记录返回 null，变更失败', () => { const { store } = setup(); assert.equal(store.get('missing'), null); assert.throws(() => store.remove('missing'), /不存在/); assert.throws(() => store.setStatus('missing', 'open'), /不存在/) })
+test('无效状态不能写入', () => { const { store, payload } = setup(); const item = store.add(payload); assert.throws(() => store.setStatus(item.id, 'taken'), /无效/); assert.equal(store.get(item.id).status, 'open') })
+test('必填项为空或仅空格均拒绝', () => { const { store, payload } = setup(); for (const field of ['title', 'description', 'location', 'contact']) assert.throws(() => store.add({ ...payload, [field]: '  ' }), /请填写/) })
+test('所有文本字段检查长度上限', () => { const { store, payload } = setup(); for (const [field, maximum] of Object.entries({ title: 24, description: 300, location: 60, contact: 80 })) assert.throws(() => store.add({ ...payload, [field]: '字'.repeat(maximum + 1) }), /不能超过/) })
+test('合法边界长度可发布并去除前后空白', () => { const { store, payload } = setup(); const item = store.add({ ...payload, title: '字'.repeat(24), description: '字'.repeat(300), location: '字'.repeat(60), contact: '  微信：123  ' }); assert.equal(item.contact, '微信：123') })
+test('描述少于六字拒绝', () => { const { store, payload } = setup(); assert.throws(() => store.add({ ...payload, description: '太短' }), /至少/) })
+test('错误类别及类型拒绝', () => { const { store, payload } = setup(); assert.throws(() => store.add({ ...payload, category: '不存在' }), /分类/); assert.throws(() => store.add({ ...payload, type: 'xxx' }), /寻物/) })
+test('未来、不存在、格式错误日期均拒绝', () => { const { store, payload } = setup(); for (const date of ['2026-10-09', '2026-02-30', '2026-13-01', '2026-1-1', '', 'not-date']) assert.throws(() => store.add({ ...payload, date }), /日期/) })
+test('闰日按真实日历验证', () => { const { payload } = setup(); assert.doesNotThrow(() => api.validate({ ...payload, date: '2024-02-29' }, '2026-10-08')); assert.throws(() => api.validate({ ...payload, date: '2025-02-29' }, '2026-10-08'), /日期/) })
+test('图片仅允许受控 raster data URI', () => { const { store, payload } = setup(); for (const image of ['https://example.com/a.png', 'file:///C:/image.png', 'data:image/svg+xml;base64,YQ==', 'javascript:alert(1)', 123]) assert.throws(() => store.add({ ...payload, image }), /图片格式/) })
+test('过大图片拒绝且不写入新记录', () => { const { store, payload } = setup(); assert.throws(() => store.add({ ...payload, image: `data:image/jpeg;base64,${'A'.repeat(1500000)}` }), /图片过大/); assert.equal(store.mine().length, 0) })
+test('关键词同时搜索名称、描述和地点，忽略大小写', () => { const { store, payload } = setup(); store.add({ ...payload, title: 'AirPods 耳机' }); for (const query of ['airpods', '星星', '图书馆']) assert.ok(api.filter(store.mine(), { query }).length) })
+test('类别、类型与状态可组合筛选且不修改原数组', () => { const { store } = setup(); const all = store.list(); const result = api.filter(all, { category: '证件钥匙', type: 'found', status: 'open' }); assert.equal(result.length, 1); assert.equal(all.length, 6); assert.equal(api.filter(all, { query: '找不到' }).length, 0) })
+test('我的发布不包含演示记录', () => { const { store, payload } = setup(); const item = store.add(payload); assert.deepEqual(store.mine().map((row) => row.id), [item.id]) })
+test('HTML 特殊字符作为普通文本保存', () => { const { store, payload } = setup(); const title = '<img onerror=alert(1)>'; assert.equal(store.add({ ...payload, title }).title, title) })
+test('保存失败保留此前记录与状态', () => { const { store, storage, payload } = setup(); const item = store.add(payload); const old = storage.getItem(api.KEY); storage.setItem = () => { throw new Error('quota') }; assert.throws(() => store.setStatus(item.id, 'closed'), /保存失败/); assert.equal(storage.getItem(api.KEY), old); assert.throws(() => store.add(payload), /保存失败/); assert.equal(store.mine().length, 1) })
+test('损坏存储不会被自动重置或覆盖', () => { const { store, storage } = setup(); storage.setItem(api.KEY, '{bad'); assert.throws(() => store.list(), /无法读取/); assert.equal(storage.getItem(api.KEY), '{bad') })
+test('无效存储结构不冒充成功读取', () => { const { store, storage } = setup(); storage.setItem(api.KEY, JSON.stringify({ version: 1, ownerId: 'me', nickname: 'abc', items: [{}] })); assert.throws(() => store.list(), /格式不正确/) })
+test('昵称为空或超长拒绝', () => { const { store } = setup(); assert.throws(() => store.setNickname(' '), /1–20/); assert.throws(() => store.setNickname('字'.repeat(21)), /1–20/); assert.equal(store.profile().nickname, '小林') })
+test('草稿保存、恢复、清空独立于已发布信息', () => { const { store, payload } = setup(); store.add(payload); store.saveDraft({ title: '未完成', contact: 'abc', arbitrary: 'ignored' }); assert.deepEqual(store.draft(), { title: '未完成', contact: 'abc' }); store.clearDraft(); assert.deepEqual(store.draft(), {}); assert.equal(store.mine().length, 1) })
+test('损坏草稿不损坏物品列表', () => { const { store, storage } = setup(); storage.setItem(api.DRAFT_KEY, 'bad'); assert.deepEqual(store.draft(), {}); assert.equal(store.list().length, 6) })
+test('草稿写入失败明确报告', () => { const { store, storage } = setup(); storage.setItem = () => { throw new Error('quota') }; assert.throws(() => store.saveDraft({ title: '未完成' }), /草稿未能保存/) })
+test('编号重复拒绝覆盖', () => { const { storage, payload } = setup(); const store = api.createStore(storage, { id: () => 'same', now: () => new Date(2026, 9, 8) }); store.add(payload); assert.throws(() => store.add(payload), /编号失败/); assert.equal(store.mine().length, 1) })
