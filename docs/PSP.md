@@ -8,20 +8,20 @@
 | --- | --- | --- | --- |
 | Planning | 计划（汇总） | 15 | 未统计 |
 | Estimate | 估计任务时间 | 15 | 未记录 |
-| Development | 开发（汇总） | 260 | 未统计 |
+| Development | 开发（汇总） | 495 | 未统计 |
 | Analysis | 需求分析 / 学习技术 | 15 | 未记录 |
 | Design Spec | 设计文档 | 10 | 未记录 |
 | Design Review | 设计复审 | 5 | 未记录 |
 | Coding Standard | 代码规范 | 5 | 未记录 |
-| Design | 具体设计 | 25 | 未记录 |
-| Coding | 编码 | 120 | 未记录 |
-| Code Review | 代码复审 | 20 | 未记录 |
-| Test | 测试与修改 | 60 | 未记录 |
+| Design | 具体设计 | 40 | 未记录 |
+| Coding | 编码 | 300 | 未记录 |
+| Code Review | 代码复审 | 30 | 未记录 |
+| Test | 测试与修改 | 90 | 未记录 |
 | Reporting | 报告（汇总） | 30 | 未统计 |
 | Test Report | 测试报告 | 15 | 未记录 |
 | Size Measurement | 工作量统计 | 5 | 未记录 |
 | Postmortem & Process Improvement Plan | 总结与改进 | 10 | 未记录 |
-| 合计 | 汇总行不重复计入 | 305 | 未统计 |
+| 合计 | 汇总行不重复计入 | 540 | 未统计 |
 
 ## 工作内容
 
