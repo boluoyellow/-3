@@ -18,6 +18,8 @@ async function run() {
     let count = 0
     async function check(name, action) { await action(); count++; console.log(`PASS ${name}`) }
     await page.goto(url)
+    assert.ok(!(await page.locator('.site-footer').textContent()).includes('本地版本'))
+    assert.ok(!(await page.locator('.site-footer').textContent()).includes('当前浏览器'))
     await check('file:// 直接打开与首屏示例', async () => { await page.locator('.card').first().waitFor(); assert.equal(await page.locator('.card').count(), 5); assert.ok((await page.locator('h1').textContent()).includes('让遗失有回音')); await page.screenshot({ path: path.join(output, 'desktop-home.png'), fullPage: true }) })
     await check('搜索名称、地点与清空筛选', async () => { await page.getByRole('searchbox').fill('图书馆'); assert.equal(await page.locator('.card').count(), 1); await page.getByRole('searchbox').fill('不存在的物品'); assert.equal(await page.locator('.card').count(), 0); await page.getByRole('button', { name: '清除筛选' }).click(); assert.equal(await page.locator('.card').count(), 5) })
     await check('类型、分类与完成状态筛选', async () => { await page.getByRole('button', { name: '失物招领', exact: true }).click(); assert.equal(await page.locator('.card').count(), 3); await page.getByRole('button', { name: '证件钥匙', exact: true }).click(); assert.equal(await page.locator('.card').count(), 1); await page.getByRole('button', { name: '全部', exact: true }).click(); await page.locator('#status-select').selectOption('closed'); assert.equal(await page.locator('.card').count(), 1); await page.getByRole('button', { name: '全部信息' }).click(); await page.locator('#status-select').selectOption('open') })
@@ -41,6 +43,8 @@ async function run() {
       await page.getByRole('heading', { name: '黑色键盘', exact: true }).waitFor()
       assert.equal(await page.locator('.detail-visual img').count(), 1)
       assert.equal(await page.locator('.detail-content > .badge').first().textContent(), '寻物中')
+      assert.equal(await page.locator('.detail-content .local-note').count(), 0)
+      assert.ok(!(await page.locator('.detail-content').textContent()).includes('只有你主动更新'))
       await page.screenshot({ path: path.join(output, 'desktop-detail.png'), fullPage: true })
     })
     await check('刷新后物品及照片仍可读取', async () => { await page.reload(); await page.getByRole('heading', { name: '黑色键盘', exact: true }).waitFor(); assert.ok(await page.locator('.detail-visual img').evaluate((image) => image.complete && image.naturalWidth > 0)); assert.equal(await page.locator('#nickname-button').textContent(), '◉ 网页测试同学') })
