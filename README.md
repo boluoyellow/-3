@@ -40,7 +40,6 @@ tests/
 scripts/serve.js        可选本地预览服务
 docs/
   testing.md           已执行的验证与局限
-  PSP.md               PSP 记录表
 package.json           开发检查命令（使用页面不依赖它）
 ```
 
@@ -78,4 +77,4 @@ node tests/chrome.e2e.cjs
 
 默认使用 Windows 标准 Chrome 安装路径；其他平台可通过 `CHROME_PATH` 指定 Chrome 可执行文件。已有 Playwright 环境时，可用 `PLAYWRIGHT_MODULE` 指定其模块路径。测试使用独立浏览器上下文。
 
-测试说明见 [docs/testing.md](docs/testing.md)，PSP 表见 [docs/PSP.md](docs/PSP.md)。
+测试说明见 [docs/testing.md](docs/testing.md)。
